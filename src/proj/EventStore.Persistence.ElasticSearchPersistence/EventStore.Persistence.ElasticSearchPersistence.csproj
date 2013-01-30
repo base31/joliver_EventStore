@@ -43,6 +43,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -50,14 +51,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ElasticSearchCommit.cs" />
+    <Compile Include="ElasticSearchPersistenceConfiguration.cs" />
     <Compile Include="ElasticSearchPersistenceEngine.cs" />
     <Compile Include="ElasticSearchPersistenceFactory.cs" />
     <Compile Include="ExtensionMethods.cs" />
+    <Compile Include="Helpers\GuidHelper.cs" />
+    <Compile Include="IElasticSearchPersistenceConfiguration.cs" />
     <Compile Include="Messages.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Messages.resx</DependentUpon>
     </Compile>
+    <Compile Include="Helpers\Natives\NativeMethods.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
