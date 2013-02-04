@@ -72,7 +72,7 @@ namespace EventStore.Persistence.ElasticSearchPersistence
                 TryElasticSearch(() =>
                 {
                     var commit = attempt.ToElasticSearchCommit(_serializer);
-                    if(_client.Get<ElasticSearchCommit>(commit.Id) == null)
+                    if (_client.Get<ElasticSearchCommit>(commit.Id) == null)
                     {
                         _client.Index(commit, _connectionSettings.DefaultIndex);//, new IndexParameters{OpType = OpType.Create});
                         Logger.Debug(Messages.CommitPersisted, attempt.CommitId);
@@ -90,12 +90,13 @@ namespace EventStore.Persistence.ElasticSearchPersistence
             {
                 Logger.Debug(Messages.ConcurrentWriteDetected);
                 Logger.Error(cx.Message);
+                throw new ConcurrencyException();
             }
         }
 
         public Snapshot GetSnapshot(Guid streamId, int maxRevision)
-         {
-            return new Snapshot(Guid.NewGuid(),1,null);
+        {
+            return null;// new Snapshot(Guid.NewGuid(), 1, null);
         }
 
         public bool AddSnapshot(Snapshot snapshot)
@@ -105,7 +106,7 @@ namespace EventStore.Persistence.ElasticSearchPersistence
 
         public IEnumerable<StreamHead> GetStreamsToSnapshot(int maxThreshold)
         {
-            return new StreamHead[] { new StreamHead(Guid.NewGuid(),1,1) };
+            return null;// new StreamHead[] { new StreamHead(Guid.NewGuid(), 1, 1) };
         }
 
         public void Initialize()
@@ -126,12 +127,27 @@ namespace EventStore.Persistence.ElasticSearchPersistence
 
         public IEnumerable<Commit> GetFrom(DateTime start)
         {
-            return new Commit[] { new Commit(Guid.NewGuid(), 1, Guid.NewGuid(), 1, DateTime.Now, null, null) };
+            //return new Commit[] { new Commit(Guid.NewGuid(), 1, Guid.NewGuid(), 1, DateTime.Now, null, null) };
+            var result = _client.Search<ElasticSearchCommit>(x =>
+                           x.Query(
+                               q => q.Range(n => n
+                                                     .OnField("commitStamp")
+                                                     .From(start))
+                               )).Documents.ToCommits();
+            return result;
         }
 
         public IEnumerable<Commit> GetFromTo(DateTime start, DateTime end)
         {
-            return new Commit[] { new Commit(Guid.NewGuid(), 1, Guid.NewGuid(), 1, DateTime.Now, null, null) };
+            //return new Commit[] { new Commit(Guid.NewGuid(), 1, Guid.NewGuid(), 1, DateTime.Now, null, null) };
+            var result = _client.Search<ElasticSearchCommit>(x =>
+                           x.Query(
+                               q => q.Range(n => n
+                                                     .OnField("commitStamp")
+                                                     .From(start)
+                                                     .To(end))
+                               )).Documents.ToCommits();
+            return result;
         }
 
         public IEnumerable<Commit> GetUndispatchedCommits()
@@ -146,7 +162,13 @@ namespace EventStore.Persistence.ElasticSearchPersistence
 
         public void MarkCommitAsDispatched(Commit commit)
         {
-            
+            var elasticSearchCommit = commit.ToElasticSearchCommit(_serializer);
+            _client.Update<ElasticSearchCommit>(u => u
+                .Object(elasticSearchCommit)
+                .Script("ctx._source.dispatched = true")
+                .RetriesOnConflict(5)
+                .Refresh()
+                );
         }
 
         public void Purge()
