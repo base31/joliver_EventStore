@@ -34,6 +34,7 @@ namespace EventStore.Example
 			 return Wireup.Init()
 				.LogToOutputWindow()
 				.UsingSqlPersistence("EventStore")
+                
 					.EnlistInAmbientTransaction() // two-phase commit
 					.InitializeStorageEngine()
 					.UsingJsonSerialization()
